@@ -1,0 +1,9 @@
+.idea/
+.vscode/
+*.out
+*.log
+*.env
+bin/
+vendor/
+.DS_Store
+

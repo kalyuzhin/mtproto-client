@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/gotd/td/telegram/query"
-	"github.com/gotd/td/telegram/query/dialogs"
 	"log"
 	"os"
 
+	"github.com/gotd/td/telegram/query"
+	"github.com/gotd/td/telegram/query/dialogs"
 	"github.com/gotd/td/examples"
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"

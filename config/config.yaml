@@ -1,4 +1,4 @@
 session_file:
   value: 'session.json'
 session_directory:
-  value: 'session/'
+  value: './session/'

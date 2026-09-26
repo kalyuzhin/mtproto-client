@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/joho/godotenv"
 	"log"
+	"path"
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
@@ -20,8 +21,10 @@ const (
 const (
 	sessionFile configKey = "session_file"
 	sessionDir  configKey = "session_directory"
-	appID                 = "APP_ID"
+	appID                 = "app_id"
 	appHash               = "app_hash"
+	phoneNumber           = "phone"
+	password              = "pswd"
 )
 
 type configKey string
@@ -31,8 +34,10 @@ type configValue struct {
 }
 
 type Config struct {
-	appID   int    `mapstructure:"app_id"`
-	appHash string `mapstructure:"app_hash"`
+	appID       int
+	appHash     string
+	phoneNumber string
+	password    string
 
 	values map[configKey]configValue
 }
@@ -62,6 +67,8 @@ func MustLoad() *Realtime {
 
 	config.appID = v.GetInt(appID)
 	config.appHash = v.GetString(appHash)
+	config.phoneNumber = v.GetString(phoneNumber)
+	config.password = v.GetString(password)
 
 	err = v.ReadInConfig()
 	if err != nil {
@@ -109,14 +116,8 @@ func (c *Realtime) GetSessionFile() string {
 	c.m.RLock()
 	defer c.m.RUnlock()
 
-	return c.cfg.values[sessionFile].String()
-}
-
-func (c *Realtime) GetSessionDirectory() string {
-	c.m.RLock()
-	defer c.m.RUnlock()
-
-	return c.cfg.values[sessionDir].String()
+	return path.Join(c.cfg.values[sessionDir].String(),
+		c.cfg.values[sessionFile].String())
 }
 
 func (c *Realtime) GetAppID() int {
@@ -131,6 +132,20 @@ func (c *Realtime) GetAppHash() string {
 	defer c.m.RUnlock()
 
 	return c.cfg.appHash
+}
+
+func (c *Realtime) GetPassword() string {
+	c.m.RLock()
+	defer c.m.RUnlock()
+
+	return c.cfg.password
+}
+
+func (c *Realtime) GetPhoneNumber() string {
+	c.m.RLock()
+	defer c.m.RUnlock()
+
+	return c.cfg.phoneNumber
 }
 
 func (c configValue) String() string {

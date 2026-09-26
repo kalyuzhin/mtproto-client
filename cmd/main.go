@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/gotd/td/telegram/query"
+	"github.com/gotd/td/telegram/query/dialogs"
 	"log"
 	"os"
 
@@ -38,6 +40,11 @@ func main() {
 		if errRun != nil {
 			log.Fatal(errRun)
 		}
+		errRun = getChats(ctx, client)
+		if errRun != nil {
+			return errRun
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -46,21 +53,30 @@ func main() {
 }
 
 func authQR(ctx context.Context, client *telegram.Client, password string) error {
-	dispatcher := tg.NewUpdateDispatcher()
-	loggedIn := qrlogin.OnLoginToken(&dispatcher)
-
-	show := func(ctx context.Context, token qrlogin.Token) error {
-		qrterminal.Generate(token.URL(), qrterminal.L, os.Stderr)
-		return nil
+	status, errRun := client.Auth().Status(ctx)
+	if errRun != nil {
+		return errRun
 	}
 
-	if _, err := client.QR().Auth(ctx, loggedIn, show); err != nil {
-		if !tgerr.Is(err, "SESSION_PASSWORD_NEEDED") {
-			return err
+	if status.Authorized {
+		log.Println("Reusing stored session, no login required")
+	} else {
+		dispatcher := tg.NewUpdateDispatcher()
+		loggedIn := qrlogin.OnLoginToken(&dispatcher)
+
+		show := func(ctx context.Context, token qrlogin.Token) error {
+			qrterminal.Generate(token.URL(), qrterminal.L, os.Stderr)
+			return nil
 		}
-		// Prompt for the 2FA password and finish.
-		if _, err := client.Auth().Password(ctx, password); err != nil {
-			return err
+
+		if _, err := client.QR().Auth(ctx, loggedIn, show); err != nil {
+			if !tgerr.Is(err, "SESSION_PASSWORD_NEEDED") {
+				return err
+			}
+			// Prompt for the 2FA password and finish.
+			if _, err := client.Auth().Password(ctx, password); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -71,19 +87,34 @@ func authCode(ctx context.Context, client *telegram.Client, rtConfig rtConfig) e
 	authFlow := auth.NewFlow(auth.Constant(rtConfig.GetPhoneNumber(),
 		rtConfig.GetPassword(), examples.Terminal{}), auth.SendCodeOptions{})
 
-	status, errRun := client.Auth().Status(ctx)
-	if errRun != nil {
-		return errRun
+	status, err := client.Auth().Status(ctx)
+	if err != nil {
+		return err
 	}
 
 	if status.Authorized {
 		log.Println("Reusing stored session, no login required")
 	} else {
 		log.Println("No valid session, logging in with code")
-		if errRun = client.Auth().IfNecessary(ctx, authFlow); errRun != nil {
-			return errRun
+		if err = client.Auth().IfNecessary(ctx, authFlow); err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+func getChats(ctx context.Context, client *telegram.Client) error {
+	api := client.API()
+	count := 0
+	return query.GetDialogs(api).ForEach(ctx,
+		func(ctx context.Context, elem dialogs.Elem) error {
+			if elem.Deleted() {
+				return nil
+			}
+			count++
+			log.Printf("№%d – %s", count, elem.Dialog.TypeName())
+
+			return nil
+		})
 }

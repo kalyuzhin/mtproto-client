@@ -2,16 +2,19 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
-	"github.com/gotd/td/telegram/query"
-	"github.com/gotd/td/telegram/query/dialogs"
+	"github.com/gotd/contrib/middleware/floodwait"
+	"github.com/gotd/contrib/middleware/ratelimit"
 	"github.com/gotd/td/examples"
 	"github.com/gotd/td/session"
 	"github.com/gotd/td/telegram"
 	"github.com/gotd/td/telegram/auth"
 	"github.com/gotd/td/telegram/auth/qrlogin"
+	"github.com/gotd/td/telegram/query"
+	"github.com/gotd/td/telegram/query/dialogs"
 	"github.com/gotd/td/tg"
 	"github.com/gotd/td/tgerr"
 	"github.com/kalyuzhin/mtproto-client/internal/config"
@@ -27,16 +30,20 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	rtConfig := config.MustLoad()
+	rtc := config.MustLoad()
 
 	client := telegram.NewClient(
-		rtConfig.GetAppID(),
-		rtConfig.GetAppHash(),
+		rtc.GetAppID(),
+		rtc.GetAppHash(),
 		telegram.Options{
-			SessionStorage: &session.FileStorage{Path: rtConfig.GetSessionFile()},
+			SessionStorage: &session.FileStorage{Path: rtc.GetSessionFile()},
+			Middlewares: []telegram.Middleware{
+				floodwait.NewSimpleWaiter(),
+				ratelimit.New(20, 1),
+			},
 		})
 	err := client.Run(ctx, func(ctx context.Context) error {
-		errRun := authQR(ctx, client, rtConfig.GetPassword())
+		errRun := authCode(ctx, client, rtc)
 		if errRun != nil {
 			log.Fatal(errRun)
 		}
@@ -113,8 +120,30 @@ func getChats(ctx context.Context, client *telegram.Client) error {
 				return nil
 			}
 			count++
-			log.Printf("№%d – %s", count, elem.Dialog.TypeName())
+			log.Printf("№%d – %s", count, dialogName(elem))
 
 			return nil
 		})
+}
+
+func dialogName(elem dialogs.Elem) string {
+	peer, ok := elem.Dialog.(*tg.Dialog)
+	if !ok {
+		return "?"
+	}
+	switch p := peer.Peer.(type) {
+	case *tg.PeerUser:
+		if u, ok := elem.Entities.User(p.UserID); ok {
+			return fmt.Sprintf("Name:%s \nLastName: %s \nUsername: %s\n", u.FirstName, u.LastName, u.Username)
+		}
+	case *tg.PeerChat:
+		if c, ok := elem.Entities.Chat(p.ChatID); ok {
+			return c.Title
+		}
+	case *tg.PeerChannel:
+		if c, ok := elem.Entities.Channel(p.ChannelID); ok {
+			return c.Title
+		}
+	}
+	return "?"
 }

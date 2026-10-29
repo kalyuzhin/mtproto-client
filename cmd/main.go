@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/gotd/contrib/middleware/floodwait"
 	"github.com/gotd/contrib/middleware/ratelimit"
@@ -15,6 +17,7 @@ import (
 	"github.com/gotd/td/telegram/auth/qrlogin"
 	"github.com/gotd/td/telegram/query"
 	"github.com/gotd/td/telegram/query/dialogs"
+	"github.com/gotd/td/telegram/query/messages"
 	"github.com/gotd/td/tg"
 	"github.com/gotd/td/tgerr"
 	"github.com/kalyuzhin/mtproto-client/internal/config"
@@ -43,11 +46,11 @@ func main() {
 			},
 		})
 	err := client.Run(ctx, func(ctx context.Context) error {
-		errRun := authCode(ctx, client, rtc)
+		errRun := authQR(ctx, client, rtc.GetPassword())
 		if errRun != nil {
 			log.Fatal(errRun)
 		}
-		errRun = getChats(ctx, client)
+		errRun = getChatHistory(ctx, client)
 		if errRun != nil {
 			return errRun
 		}
@@ -146,4 +149,30 @@ func dialogName(elem dialogs.Elem) string {
 		}
 	}
 	return "?"
+}
+
+func getChatHistory(ctx context.Context, client *telegram.Client) error {
+	api := client.API()
+
+	err := query.Messages(api).GetHistory(&tg.InputPeerUser{UserID: 1}).
+		ForEach(ctx, func(ctx context.Context, elem messages.Elem) error {
+
+			user, ok := elem.Entities.User(1)
+			if !ok {
+				return fmt.Errorf("user not found")
+			}
+
+			if msg, ok := elem.Msg.(*tg.Message); ok {
+				fmt.Printf("Author: %s\nMessage: %s\nDate: %s\n\n",
+					strings.Join([]string{user.FirstName, user.LastName, user.Username}, " "),
+					msg.Message, time.Unix(int64(msg.Date), 0))
+			}
+
+			return nil
+		})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

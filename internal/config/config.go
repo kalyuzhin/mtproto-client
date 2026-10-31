@@ -2,7 +2,6 @@ package config
 
 import (
 	"log"
-	"path"
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
@@ -16,15 +15,6 @@ const (
 
 const (
 	configPath = "./config/"
-)
-
-const (
-	sessionFile configKey = "session_file"
-	sessionDir  configKey = "session_directory"
-	appID                 = "app_id"
-	appHash               = "app_hash"
-	phoneNumber           = "phone"
-	password              = "pswd"
 )
 
 type configKey string
@@ -112,42 +102,10 @@ func MustLoad() *Realtime {
 	return rtConfig
 }
 
-func (c *Realtime) GetSessionFile() string {
-	c.m.RLock()
-	defer c.m.RUnlock()
-
-	return path.Join(c.cfg.values[sessionDir].String(),
-		c.cfg.values[sessionFile].String())
-}
-
-func (c *Realtime) GetAppID() int {
-	c.m.RLock()
-	defer c.m.RUnlock()
-
-	return c.cfg.appID
-}
-
-func (c *Realtime) GetAppHash() string {
-	c.m.RLock()
-	defer c.m.RUnlock()
-
-	return c.cfg.appHash
-}
-
-func (c *Realtime) GetPassword() string {
-	c.m.RLock()
-	defer c.m.RUnlock()
-
-	return c.cfg.password
-}
-
-func (c *Realtime) GetPhoneNumber() string {
-	c.m.RLock()
-	defer c.m.RUnlock()
-
-	return c.cfg.phoneNumber
-}
-
 func (c configValue) String() string {
 	return c.Value.(string)
+}
+
+func (c configValue) Int32() int32 {
+	return c.Value.(int32)
 }

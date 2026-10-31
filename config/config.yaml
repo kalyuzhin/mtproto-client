@@ -2,3 +2,15 @@ session_file:
   value: 'session.json'
 session_directory:
   value: './session/'
+
+
+argon2_memory:
+  value: 65536
+argon2_threads:
+  value: 4
+argon2_salt_length:
+  value: 16
+argon2_key_length:
+  value: 32
+argon2_time:
+  value: 3

@@ -91,6 +91,8 @@ func MustLoad() *Realtime {
 
 		tCfg.appHash = config.appHash
 		tCfg.appID = config.appID
+		tCfg.phoneNumber = config.phoneNumber
+		tCfg.password = config.password
 
 		rtConfig.cfg = tCfg
 
@@ -106,6 +108,10 @@ func (c configValue) String() string {
 	return c.Value.(string)
 }
 
-func (c configValue) Int32() int32 {
-	return c.Value.(int32)
+func (c configValue) UInt8() uint8 {
+	return c.Value.(uint8)
+}
+
+func (c configValue) UInt32() uint32 {
+	return c.Value.(uint32)
 }

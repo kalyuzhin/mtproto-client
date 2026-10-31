@@ -53,37 +53,37 @@ func (c *Realtime) GetPhoneNumber() string {
 	return c.cfg.phoneNumber
 }
 
-func (c *Realtime) GetArgon2Memory() int32 {
+func (c *Realtime) GetArgon2Memory() uint32 {
 	c.m.RLock()
 	defer c.m.RUnlock()
 
-	return c.cfg.values[argon2Memory].Int32()
+	return c.cfg.values[argon2Memory].UInt32()
 }
 
-func (c *Realtime) GetArgon2Threads() int32 {
+func (c *Realtime) GetArgon2Threads() uint8 {
 	c.m.RLock()
 	defer c.m.RUnlock()
 
-	return c.cfg.values[argon2Threads].Int32()
+	return c.cfg.values[argon2Threads].UInt8()
 }
 
-func (c *Realtime) GetArgon2Time() int32 {
+func (c *Realtime) GetArgon2Time() uint32 {
 	c.m.RLock()
 	defer c.m.RUnlock()
 
-	return c.cfg.values[argon2Time].Int32()
+	return c.cfg.values[argon2Time].UInt32()
 }
 
-func (c *Realtime) GetArgon2SaltLength() int32 {
+func (c *Realtime) GetArgon2SaltLength() uint32 {
 	c.m.RLock()
 	defer c.m.RUnlock()
 
-	return c.cfg.values[argon2SaltLen].Int32()
+	return c.cfg.values[argon2SaltLen].UInt32()
 }
 
-func (c *Realtime) GetArgon2KeyLength() int32 {
+func (c *Realtime) GetArgon2KeyLength() uint32 {
 	c.m.RLock()
 	defer c.m.RUnlock()
 
-	return c.cfg.values[argon2KeyLen].Int32()
+	return c.cfg.values[argon2KeyLen].UInt32()
 }
